@@ -7,6 +7,7 @@ use Mojo::Collection 'c';
 use Mojo::DOM;
 use Mojo::JSON 'j';
 use Mojo::Util qw(dumper monkey_patch);
+use Scalar::Util 'set_prototype';
 
 # Silent one-liners
 $ENV{MOJO_LOG_LEVEL} ||= 'fatal';
@@ -16,6 +17,7 @@ sub import {
   # Mojolicious::Lite
   my $caller = caller;
   eval "package $caller; use Mojolicious::Lite; 1" or die $@;
+  Mojo::Base->import(-strict);
   my $ua = $caller->app->ua;
   $ua->server->app->hook(around_action => sub { local $_ = $_[1]; $_[0]->() });
 
@@ -31,7 +33,7 @@ sub import {
     g => sub { _request($ua, 'GET',    @_) },
     h => sub { _request($ua, 'HEAD',   @_) },
     j => \&j,
-    n => sub (&@) { say STDERR timestr timeit($_[1] // 1, $_[0]) },
+    n => set_prototype(\&_n, '&@'),
     o => sub { _request($ua, 'OPTIONS', @_) },
     p => sub { _request($ua, 'POST',    @_) },
     r => \&dumper,
@@ -39,6 +41,8 @@ sub import {
     u => sub { _request($ua, 'PUT',     @_) },
     x => sub { Mojo::DOM->new(@_) };
 }
+
+sub _n { say STDERR timestr timeit($_[1] // 1, $_[0]) }
 
 sub _request {
   my $ua = shift;

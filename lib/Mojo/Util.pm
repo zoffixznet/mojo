@@ -11,6 +11,7 @@ use File::Basename 'dirname';
 use File::Spec::Functions 'catfile';
 use List::Util 'min';
 use MIME::Base64 qw(decode_base64 encode_base64);
+use Scalar::Util 'set_prototype';
 use Symbol 'delete_package';
 use Time::HiRes ();
 
@@ -278,11 +279,12 @@ sub squish {
   return $str;
 }
 
-sub steady_time () {
+sub steady_time {
   MONOTONIC
     ? Time::HiRes::clock_gettime(Time::HiRes::CLOCK_MONOTONIC())
     : Time::HiRes::time;
 }
+BEGIN { set_prototype \&steady_time, '' }
 
 sub tablify {
   my $rows = shift;
