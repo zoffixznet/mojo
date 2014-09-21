@@ -31,8 +31,8 @@ sub import {
   }
 
   # ISA
+  my $caller = caller;
   if ($flag) {
-    my $caller = caller;
     no strict 'refs';
     push @{"${caller}::ISA"}, $flag;
     *{"${caller}::has"} = sub { attr($caller, @_) };
@@ -42,10 +42,14 @@ sub import {
   $_->import for qw(strict warnings utf8);
   feature->import(':5.10');
 
-  # Signatures for Perl 5.20+
+  # Signatures
   if ($^V >= 5.020000) {
     feature->import('signatures');
     warnings->unimport('experimental::signatures');
+  }
+  else {
+    require signatures;
+    signatures->setup_for($caller);
   }
 }
 
@@ -147,6 +151,10 @@ All three forms save a lot of typing.
     feature->import('signatures');
     warnings->unimport('experimental::signatures');
   }
+  else {
+    require signatures;
+    signatures->import;
+  }
   use IO::Handle ();
 
   # use Mojo::Base -base;
@@ -157,6 +165,10 @@ All three forms save a lot of typing.
   if ($^V >= 5.020000) {
     feature->import('signatures');
     warnings->unimport('experimental::signatures');
+  }
+  else {
+    require signatures;
+    signatures->import;
   }
   use IO::Handle ();
   use Mojo::Base;
@@ -171,6 +183,10 @@ All three forms save a lot of typing.
   if ($^V >= 5.020000) {
     feature->import('signatures');
     warnings->unimport('experimental::signatures');
+  }
+  else {
+    require signatures;
+    signatures->import;
   }
   use IO::Handle ();
   require SomeBaseClass;
