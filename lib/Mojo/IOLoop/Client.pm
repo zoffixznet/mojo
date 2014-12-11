@@ -29,6 +29,9 @@ use constant SOCKS_WRITE => SOCKS ? IO::Socket::Socks::SOCKS_WANT_WRITE() : 0;
 
 has reactor => sub { Mojo::IOLoop->singleton->reactor };
 
+use Mojo::IOLoop::Resolver;
+has resolver => sub { Mojo::IOLoop::Resolver->new(reactor => shift->reactor) };
+
 sub DESTROY { shift->_cleanup }
 
 sub connect {
@@ -45,23 +48,17 @@ sub connect {
   $_ && s/[[\]]//g for @$args{qw(address socks_address)};
   my $address = $args->{socks_address} || ($args->{address} ||= 'localhost');
   return $reactor->next_tick(sub { $self && $self->_connect($args) })
-    unless NDN && $address ne 'localhost' && !$args->{handle};
+    if $address eq 'localhost' || $args->{handle};
 
-  # Non-blocking name resolution
-  my $handle = $self->{dns}
-    = $NDN->getaddrinfo($address, _port($args), {protocol => IPPROTO_TCP});
-  $reactor->io(
-    $handle => sub {
-      my $reactor = shift;
-
-      $reactor->remove($self->{dns});
-      my ($err, @res) = $NDN->get_result(delete $self->{dns});
-      return $self->emit(error => "Can't resolve: $err") if $err;
-
-      $args->{addr_info} = \@res;
-      $self->_connect($args);
-    }
-  )->watch($handle, 1, 0);
+  # Pluggable name resolution
+  my $resolver = $self->resolver;
+  $resolver->getaddrinfo( $address, _port($args), sub {
+    my ($resolver, $err, $addr_info) = @_;
+    return unless $self;
+    return $self->emit(error => "Can't resolve: $err") if $err;
+    $args->{addr_info} = $addr_info if $addr_info;
+    $self->_connect($args);
+  });
 }
 
 sub _cleanup {
