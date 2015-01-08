@@ -28,7 +28,8 @@ WriteMakefile(
   PREREQ_PM => {
     'IO::Socket::IP' => '0.26',
     'Pod::Simple'    => '3.09',
-    'Time::Local'    => '1.2'
+    'Time::Local'    => '1.2',
+    'Test::Simple'   => '1.301001097',
   },
   EXE_FILES => ['script/hypnotoad', 'script/mojo', 'script/morbo'],
   test => {TESTS => 't/*.t t/*/*.t'}

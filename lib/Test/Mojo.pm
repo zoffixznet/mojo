@@ -15,6 +15,7 @@ use Mojo::Server;
 use Mojo::UserAgent;
 use Mojo::Util qw(decode encode);
 use Test::More ();
+use Test::Stream::Toolset ();
 
 has [qw(message success tx)];
 has ua => sub { Mojo::UserAgent->new->ioloop(Mojo::IOLoop->singleton) };
@@ -310,7 +311,7 @@ sub websocket_ok {
 
 sub _build_ok {
   my ($self, $method, $url) = (shift, shift, shift);
-  local $Test::Builder::Level = $Test::Builder::Level + 1;
+  my $ctx = Test::Stream::Toolset::context();
   return $self->_request_ok($self->ua->build_tx($method, $url, @_), $url);
 }
 
@@ -321,7 +322,7 @@ sub _json {
 
 sub _message {
   my ($self, $name, $value, $desc) = @_;
-  local $Test::Builder::Level = $Test::Builder::Level + 1;
+  my $ctx = Test::Stream::Toolset::context();
   my ($type, $msg) = @{$self->message // []};
 
   # Type check
@@ -340,7 +341,7 @@ sub _message {
 sub _request_ok {
   my ($self, $tx, $url) = @_;
 
-  local $Test::Builder::Level = $Test::Builder::Level + 1;
+  my $ctx = Test::Stream::Toolset::context();
 
   # Establish WebSocket connection
   if ($tx->req->is_handshake) {
@@ -364,7 +365,7 @@ sub _request_ok {
   # Perform request
   $self->tx($self->ua->start($tx));
   my $err = $self->tx->error;
-  Test::More::diag $err->{message}
+  $ctx->diag($err->{message})
     if !(my $ok = !$err->{message} || $err->{code}) && $err;
   my $desc = encode 'UTF-8', "@{[uc $tx->req->method]} $url";
   return $self->_test('ok', $ok, $desc);
@@ -372,7 +373,7 @@ sub _request_ok {
 
 sub _test {
   my ($self, $name, @args) = @_;
-  local $Test::Builder::Level = $Test::Builder::Level + 2;
+  my $ctx = Test::Stream::Toolset::context(1);
   return $self->success(!!Test::More->can($name)->(@args));
 }
 
