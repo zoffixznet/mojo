@@ -52,6 +52,8 @@ is app->select_field(country => $values),
 # Basic tags
 $t->options_ok('/tags')->status_is(200)->content_is(<<EOF);
 <foo></foo>
+  <foo />
+  <link>http://example.com</link>
 <foo bar="baz"></foo>
 <foo one="t&lt;wo" three="four">Hello</foo>
 <div data-my-test-id="1" data-name="test">some content</div>
@@ -473,6 +475,10 @@ done_testing();
 __DATA__
 @@ tags.html.ep
 <%= tag 'foo' %>
+<%= xml begin =%>
+  <%= tag 'foo' %>
+  <%= tag link => 'http://example.com' %>
+<% end =%>
 <%= tag 'foo', bar => 'baz' %>
 <%= tag 'foo', one => 't<wo', three => 'four' => begin %>Hello<% end %>
 <%= tag 'div', data => {my_test_ID => 1, naMe => 'test'} => 'some content' %>

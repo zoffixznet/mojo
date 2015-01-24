@@ -272,6 +272,8 @@ ok $dom->at('b')->contents->first->xml, 'XML mode active';
 ok $dom->at('b')->contents->first->replace('<br>')->contents->first->xml,
   'XML mode active';
 is "$dom", '<b><br /><image /></b>', 'right result';
+is $dom->at('b')->attr(hidden => undef),
+  '<b hidden="hidden"><br /><image /></b>', 'right result';
 
 # Treating nodes as elements
 $dom = Mojo::DOM->new('foo<b>bar</b>baz');

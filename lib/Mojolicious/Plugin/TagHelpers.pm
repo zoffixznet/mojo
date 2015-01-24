@@ -18,15 +18,15 @@ sub register {
       sub { _input(shift, shift, value => shift, @_, type => 'checkbox') });
   $app->helper(csrf_field => \&_csrf_field);
   $app->helper(file_field =>
-      sub { shift; _tag('input', name => shift, @_, type => 'file') });
+      sub { _tag(shift, 'input', name => shift, @_, type => 'file') });
 
   $app->helper(form_for     => \&_form_for);
   $app->helper(hidden_field => \&_hidden_field);
-  $app->helper(image => sub { _tag('img', src => shift->url_for(shift), @_) });
-  $app->helper(input_tag => sub { _input(@_) });
-  $app->helper(javascript => \&_javascript);
-  $app->helper(label_for  => \&_label_for);
-  $app->helper(link_to    => \&_link_to);
+  $app->helper(image        => \&_image);
+  $app->helper(input_tag    => sub { _input(@_) });
+  $app->helper(javascript   => \&_javascript);
+  $app->helper(label_for    => \&_label_for);
+  $app->helper(link_to      => \&_link_to);
 
   $app->helper(password_field => \&_password_field);
   $app->helper(radio_button =>
@@ -37,10 +37,11 @@ sub register {
   $app->helper(submit_button => \&_submit_button);
 
   # "t" is just a shortcut for the "tag" helper
-  $app->helper($_ => sub { shift; _tag(@_) }) for qw(t tag);
+  $app->helper($_ => \&_tag) for qw(t tag);
 
   $app->helper(tag_with_error => \&_tag_with_error);
   $app->helper(text_area      => \&_text_area);
+  $app->helper(xml => sub { local shift->stash->{'mojo.xml'} = 1; shift->() });
 }
 
 sub _csrf_field {
@@ -63,17 +64,20 @@ sub _form_for {
     @post = (method => 'POST') if $methods{POST} && !$methods{GET};
   }
 
-  return _tag('form', action => $c->url_for(@url), @post, @_);
+  return _tag($c, 'form', action => $c->url_for(@url), @post, @_);
 }
 
 sub _hidden_field {
+  _tag(shift, 'input', name => shift, value => shift, @_, type => 'hidden');
+}
+
+sub _image {
   my $c = shift;
-  return _tag('input', name => shift, value => shift, @_, type => 'hidden');
+  return _tag($c, 'img', src => $c->url_for(shift), @_);
 }
 
 sub _input {
-  my ($c, $name) = (shift, shift);
-  my %attrs = @_ % 2 ? (value => shift, @_) : @_;
+  my ($c, $name, %attrs) = (shift, shift, @_ % 2 ? ('value', @_) : @_);
 
   # Special selection value
   my @values = @{$c->every_param($name)};
@@ -99,7 +103,7 @@ sub _javascript {
   my $content
     = ref $_[-1] eq 'CODE' ? "//<![CDATA[\n" . pop->() . "\n//]]>" : '';
   my @src = @_ % 2 ? (src => $c->url_for(shift)) : ();
-  return _tag('script', @src, @_, sub {$content});
+  return _tag($c, 'script', @src, @_, sub {$content});
 }
 
 sub _label_for {
@@ -121,15 +125,15 @@ sub _link_to {
   # Captures
   push @url, shift if ref $_[0] eq 'HASH';
 
-  return _tag('a', href => $c->url_for(@url), @_);
+  return _tag($c, 'a', href => $c->url_for(@url), @_);
 }
 
 sub _option {
-  my ($values, $pair) = @_;
+  my ($c, $values, $pair) = @_;
   $pair = [$pair => $pair] unless ref $pair eq 'ARRAY';
   my %attrs = (value => $pair->[1]);
   $attrs{selected} = undef if exists $values->{$pair->[1]};
-  return _tag('option', %attrs, @$pair[2 .. $#$pair], $pair->[0]);
+  return _tag($c, 'option', %attrs, @$pair[2 .. $#$pair], $pair->[0]);
 }
 
 sub _password_field {
@@ -149,12 +153,12 @@ sub _select_field {
     # "optgroup" tag
     if (blessed $group && $group->isa('Mojo::Collection')) {
       my ($label, $values, %attrs) = @$group;
-      my $content = join '', map { _option(\%values, $_) } @$values;
-      $groups .= _tag('optgroup', label => $label, %attrs, sub {$content});
+      my $content = join '', map { _option($c, \%values, $_) } @$values;
+      $groups .= _tag($c, 'optgroup', label => $label, %attrs, sub {$content});
     }
 
     # "option" tag
-    else { $groups .= _option(\%values, $group) }
+    else { $groups .= _option($c, \%values, $group) }
   }
 
   return _validation($c, $name, 'select', name => $name, %attrs,
@@ -165,17 +169,16 @@ sub _stylesheet {
   my $c = shift;
   my $content
     = ref $_[-1] eq 'CODE' ? "/*<![CDATA[*/\n" . pop->() . "\n/*]]>*/" : '';
-  return _tag('style', @_, sub {$content}) unless @_ % 2;
-  return _tag('link', rel => 'stylesheet', href => $c->url_for(shift), @_);
+  return _tag($c, 'style', @_, sub {$content}) unless @_ % 2;
+  return _tag($c, 'link', rel => 'stylesheet', href => $c->url_for(shift), @_);
 }
 
 sub _submit_button {
-  my $c = shift;
-  return _tag('input', value => shift // 'Ok', @_, type => 'submit');
+  _tag(shift, 'input', value => shift // 'Ok', @_, type => 'submit');
 }
 
 sub _tag {
-  my $tree = ['tag', shift, undef, undef];
+  my ($c, $tree) = (shift, ['tag', shift, undef, undef]);
 
   # Content
   if (ref $_[-1] eq 'CODE') { push @$tree, ['raw', pop->()] }
@@ -191,14 +194,15 @@ sub _tag {
     delete $attrs->{data};
   }
 
-  return Mojo::ByteStream->new(Mojo::DOM::HTML::_render($tree));
+  return Mojo::ByteStream->new(
+    Mojo::DOM::HTML::_render($tree, $c->stash->{'mojo.xml'}));
 }
 
 sub _tag_with_error {
   my ($c, $tag) = (shift, shift);
   my ($content, %attrs) = (@_ % 2 ? pop : undef, @_);
   $attrs{class} .= $attrs{class} ? ' field-with-error' : 'field-with-error';
-  return _tag($tag, %attrs, defined $content ? $content : ());
+  return _tag($c, $tag, %attrs, defined $content ? $content : ());
 }
 
 sub _text_area {
@@ -213,7 +217,7 @@ sub _text_area {
 
 sub _validation {
   my ($c, $name) = (shift, shift);
-  return _tag(@_) unless $c->validation->has_error($name);
+  return _tag($c, @_) unless $c->validation->has_error($name);
   return $c->helpers->tag_with_error(@_);
 }
 
@@ -235,7 +239,7 @@ Mojolicious::Plugin::TagHelpers - Tag helpers plugin
 
 =head1 DESCRIPTION
 
-L<Mojolicious::Plugin::TagHelpers> is a collection of HTML tag helpers for
+L<Mojolicious::Plugin::TagHelpers> is a collection of HTML/XML tag helpers for
 L<Mojolicious>.
 
 Most form helpers can automatically pick up previous input values and will
@@ -642,7 +646,8 @@ Alias for L</"tag">.
   <%= tag div => (id => 'foo') => begin %>test & 123<% end %>
 
 HTML tag generator, the C<data> attribute may contain a hash reference with
-pairs to generate attributes from.
+pairs to generate attributes from. You can also use L</"xml"> to generate XML
+tags instead.
 
   <br>
   <div></div>
@@ -756,6 +761,24 @@ automatically get picked up and shown as default.
   <input name="vacation" type="week">
   <input name="vacation" type="week" value="2012-W17">
   <input id="foo" name="vacation" type="week" value="2012-W17">
+
+=head2 xml
+
+  %= xml begin
+    %= tag 'br'
+    %= tag 'div'
+    %= tag 'div', id => 'foo', hidden => undef
+    %= tag link => 'http://example.com'
+    %= image '/images/foo.png'
+  % end
+
+Switch to generating XML tags with L</"tag">.
+
+  <br />
+  <div />
+  <div id="foo" hidden="hidden" />
+  <link>http://example.com</link>
+  <img src="/path/to/images/foo.png" />
 
 =head1 METHODS
 
