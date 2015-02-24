@@ -588,12 +588,9 @@ allowed formats.
   # /foo.xml -> {controller => 'foo', action => 'bar', format => 'xml'}
   $r->get('/foo' => [format => [qw(rss xml)]])->to('foo#bar');
 
-Or you can just disable format detection, which gets inherited by nested
-routes and allows selective re-enabling.
-
-  # /foo      -> {controller => 'foo', action => 'bar'}
-  # /foo.html -> undef
-  $r->get('/foo' => [format => 0])->to('foo#bar');
+Or you can just disable format detection with
+L<Mojolicious::Routes::Route/"without_formats">, and then re-enable it
+selectively on demand.
 
   # /foo      -> {controller => 'foo', action => 'bar'}
   # /foo.html -> undef
@@ -601,9 +598,9 @@ routes and allows selective re-enabling.
   # /baz.txt  -> {controller => 'baz', action => 'yada', format => 'txt'}
   # /baz.html -> {controller => 'baz', action => 'yada', format => 'html'}
   # /baz.xml  -> undef
-  my $inactive = $r->under([format => 0]);
-  $inactive->get('/foo')->to('foo#bar');
-  $inactive->get('/baz' => [format => [qw(txt html)]])->to('baz#yada');
+  $r->without_formats;
+  $r->get('/foo')->to('foo#bar');
+  $r->get('/baz' => [format => [qw(txt html)]])->to('baz#yada');
 
 =head2 WebSockets
 

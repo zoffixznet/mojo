@@ -122,7 +122,7 @@ sub root { shift->_chain->[0] }
 
 sub route {
   my $self   = shift;
-  my $route  = $self->add_child($self->new(@_))->children->[-1];
+  my $route  = $self->add_child(__PACKAGE__->new(@_))->children->[-1];
   my $format = $self->pattern->constraints->{format};
   $route->pattern->constraints->{format} //= 0 if defined $format && !$format;
   return $route;
@@ -173,6 +173,8 @@ sub websocket {
   $route->{websocket} = 1;
   return $route;
 }
+
+sub without_formats { !($_[0]->pattern->constraints->{format} = 0) and $_[0] }
 
 sub _chain {
   my @chain = (my $parent = shift);
@@ -385,7 +387,7 @@ the current route.
   my $r = Mojolicious::Routes::Route->new;
   my $r = Mojolicious::Routes::Route->new('/:action');
   my $r = Mojolicious::Routes::Route->new('/:action', action => qr/\w+/);
-  my $r = Mojolicious::Routes::Route->new(format => 0);
+  my $r = Mojolicious::Routes::Route->new(format => ['html', 'json']);
 
 Construct a new L<Mojolicious::Routes::Route> object and L</"parse"> pattern
 if necessary.
@@ -419,7 +421,7 @@ routing cache, since conditions are too complex for caching.
 
   $r = $r->parse('/:action');
   $r = $r->parse('/:action', action => qr/\w+/);
-  $r = $r->parse(format => 0);
+  $r = $r->parse(format => ['html', 'json']);
 
 Parse pattern.
 
@@ -488,7 +490,7 @@ The L<Mojolicious::Routes> object this route is a descendant of.
   my $route = $r->route;
   my $route = $r->route('/:action');
   my $route = $r->route('/:action', action => qr/\w+/);
-  my $route = $r->route(format => 0);
+  my $route = $r->route(format => ['html', 'json']);
 
 Low-level generator for routes matching all HTTP request methods, returns a
 L<Mojolicious::Routes::Route> object.
@@ -522,7 +524,7 @@ Stringify the whole route.
   my $route = $r->under('/:foo' => sub {...});
   my $route = $r->under('/:foo' => {foo => 'bar'});
   my $route = $r->under('/:foo' => [foo => qr/\w+/]);
-  my $route = $r->under([format => 0]);
+  my $route = $r->under([format => ['html', 'json']]);
 
 Generate L<Mojolicious::Routes::Route> object for a nested route with its own
 intermediate destination. See also L<Mojolicious::Guides::Tutorial> for many
@@ -556,6 +558,15 @@ handshakes. See also L<Mojolicious::Guides::Tutorial> for many more argument
 variations.
 
   $r->websocket('/echo')->to('example#echo');
+
+=head2 without_formats
+
+  $r = $r->without_formats;
+
+Disable format detection for this route and its descendants.
+
+  # Longer version
+  $r->pattern->constraints->{format} = 0;
 
 =head1 AUTOLOAD
 

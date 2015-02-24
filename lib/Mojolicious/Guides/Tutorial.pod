@@ -590,15 +590,13 @@ possible values.
 
   app->start;
 
-Or you can just disable format detection.
+Or you can just disable format detection with
+L<Mojolicious::Routes::Route/"without_formats">, and then re-enable it
+selectively on demand.
 
   use Mojolicious::Lite;
 
-  # /hello
-  get '/hello' => [format => 0] => {text => 'No format detection.'};
-
-  # Disable detection and allow the following routes selective re-enabling
-  under [format => 0];
+  app->routes->without_formats;
 
   # /foo
   get '/foo' => {text => 'No format detection again.'};

@@ -10,6 +10,9 @@ use Test::Mojo;
 
 app->secrets(['test1']);
 
+# Disable format detection
+app->routes->without_formats;
+
 get '/multi' => sub {
   my $c = shift;
   $c->cookie(unsigned1 => 'one');
@@ -170,9 +173,6 @@ group {
 };
 
 get '/noauthgroup' => {inline => 'Whatever <%= $foo %>.'};
-
-# Disable format detection
-under [format => 0];
 
 get '/no_format' => {text => 'No format detection.'};
 
@@ -398,14 +398,6 @@ $t->get_ok('/authgroup?ok=1')->status_is(200)
 # Not authenticated by group
 $t->get_ok('/authgroup')->status_is(200)
   ->content_type_is('text/html;charset=UTF-8')->content_is("You're not ok.");
-
-# Authenticated by group (with format)
-$t->get_ok('/authgroup.txt?ok=1')->status_is(200)
-  ->content_type_is('text/plain;charset=UTF-8')->content_is("You're ok.");
-
-# Not authenticated by group (with format)
-$t->get_ok('/authgroup.txt')->status_is(200)
-  ->content_type_is('text/plain;charset=UTF-8')->content_is("You're not ok.");
 
 # Bypassed group authentication
 $t->get_ok('/noauthgroup')->status_is(200)->content_is("Whatever one.\n");

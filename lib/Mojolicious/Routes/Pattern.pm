@@ -356,7 +356,7 @@ disabled by default.
   my $pattern = Mojolicious::Routes::Pattern->new('/:action');
   my $pattern
     = Mojolicious::Routes::Pattern->new('/:action', action => qr/\w+/);
-  my $pattern = Mojolicious::Routes::Pattern->new(format => 0);
+  my $pattern = Mojolicious::Routes::Pattern->new(format => ['html', 'json']);
 
 Construct a new L<Mojolicious::Routes::Pattern> object and L</"parse"> pattern
 if necessary.
@@ -365,7 +365,7 @@ if necessary.
 
   $pattern = $pattern->parse('/:action');
   $pattern = $pattern->parse('/:action', action => qr/\w+/);
-  $pattern = $pattern->parse(format => 0);
+  $pattern = $pattern->parse(format => ['html', 'json']);
 
 Parse pattern.
 
