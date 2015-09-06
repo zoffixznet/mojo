@@ -202,7 +202,7 @@ fun thanks to automatic reloading.
 Just save your changes and they will be automatically in effect the next time
 you refresh your browser.
 
-=head2 A birds-eye view
+=head2 A bird's-eye view
 
 It all starts with an HTTP request like this, sent by your browser.
 
@@ -230,8 +230,8 @@ sent back to the browser.
 
 =head2 Model
 
-In L<Mojolicious> we consider web applications simple frontends for existing
-business logic, that means L<Mojolicious> is by design entirely I<model> layer
+In L<Mojolicious> we consider web applications as simple frontends for existing
+business logic. That means L<Mojolicious> is by design entirely I<model> layer
 agnostic and you just use whatever Perl modules you like most.
 
   $ mkdir -p lib/MyApp/Model
@@ -290,7 +290,7 @@ templates.
     my $pass = $c->param('pass') || '';
 
     # Check password
-    return $c->render(text => "Welcome $user.")
+    return $c->render(text => "Welcome, $user.")
       if $c->users->check($user, $pass);
 
     # Failed
@@ -305,7 +305,7 @@ once.
 
 =head2 Testing
 
-In L<Mojolicious> we take testing very serious and try to make it a pleasant
+In L<Mojolicious> we take testing very seriously and try to make it a pleasant
 experience.
 
   $ mkdir t
@@ -336,7 +336,7 @@ L<Mojo::DOM>.
 
   # Test login with valid credentials
   $t->post_ok('/' => form => {user => 'sebastian', pass => 'secr3t'})
-    ->status_is(200)->text_like('html body' => qr/Welcome sebastian/);
+    ->status_is(200)->text_like('html body' => qr/Welcome, sebastian/);
 
   # Test accessing a protected page
   $t->get_ok('/protected')->status_is(200)->text_like('a' => qr/Logout/);
@@ -377,12 +377,12 @@ L<Mojolicious::Command::get>.
   Content-Length: 12
   Content-Type: text/plain
 
-  Welcome sebastian.
+  Welcome, sebastian.
 
 =head2 State keeping
 
-Sessions in L<Mojolicious> pretty much just work out of the box once you start
-using the method L<Mojolicious::Controller/"session">, there is no setup
+Sessions in L<Mojolicious> pretty much just work out of the box, once you start
+using the method L<Mojolicious::Controller/"session">. There is no setup
 required, but we suggest setting a more secure passphrase with
 L<Mojolicious/"secrets">.
 
@@ -414,12 +414,12 @@ through the method L<Mojolicious::Controller/"flash">.
 
 Just remember that all session data gets serialized with L<Mojo::JSON> and
 stored in HMAC-SHA1 signed cookies, which usually have a C<4096> byte (4KB)
-limit, depending on browser.
+limit, depending on the browser.
 
 =head2 Final prototype
 
-A final C<myapp.pl> prototype passing all of the tests above could look like
-this.
+A final C<myapp.pl> prototype that passes all of the tests above could
+look like this.
 
   #!/usr/bin/env perl
   use Mojolicious::Lite;
@@ -522,7 +522,7 @@ And the directory structure should be looking like this now.
   +- t
      +- login.t
 
-Our templates are using quite a few features of the renderer,
+Our templates are using quite a few features of the renderer.
 L<Mojolicious::Guides::Rendering> explains them all in great detail.
 
 =head1 WELL-STRUCTURED APPLICATION
@@ -706,7 +706,7 @@ information.
 
   1;
 
-The router allows many different route variations,
+The router allows many different route variations.
 L<Mojolicious::Guides::Routing> explains them all in great detail.
 
 =head2 Templates
@@ -720,8 +720,8 @@ moved into the appropriate directories.
 
 =head2 Script
 
-Finally C<myapp.pl> can be moved into a C<script> directory and renamed to
-C<my_app> to follow the CPAN standard.
+Finally, C<myapp.pl> can be moved into a C<script> directory and renamed to
+C<my_app>, to follow the CPAN standard.
 
   $ mkdir script
   $ mv myapp.pl script/my_app
@@ -745,7 +745,7 @@ can be simplified.
     ->element_exists('form input[type="submit"]');
 
   $t->post_ok('/' => form => {user => 'sebastian', pass => 'secr3t'})
-    ->status_is(200)->text_like('html body' => qr/Welcome sebastian/);
+    ->status_is(200)->text_like('html body' => qr/Welcome, sebastian/);
 
   $t->get_ok('/protected')->status_is(200)->text_like('a' => qr/Logout/);
 
